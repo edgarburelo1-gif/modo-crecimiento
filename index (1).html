@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Modo Crecimiento</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap">
+<style>
+/* Layout: estilo app de juego. Banda naranja arriba con el desafío del mes, tarjetas blancas con borde "3D", menú de íconos abajo */
+:root{
+  --bg:#ffffff; --card:#ffffff; --track:#e5e5e5; --line:#e5e5e5; --line2:#d6d6d6;
+  --ink:#3c3c3c; --muted:#8a8a8a; --band:#f27a00; --band-ink:#ffffff;
+  --accent:#ff9600; --accent-d:#cc6a00; --accent-hi:#ffc06b;
+  --rival:#b85a00; --good:#58a700; --good-bg:#d7ffb8; --bad:#ea2b2b; --blue:#1cb0f6;
+  --fire:#ff9600; --soft:#fff4e5;
+  --font:"Nunito", "Varela Round", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#131f24; --card:#131f24; --track:#37464f; --line:#37464f; --line2:#2b3a42;
+  --ink:#f1f7fb; --muted:#9db0bb; --band:#e06f00; --band-ink:#ffffff;
+  --accent:#ff9600; --accent-d:#c46300; --accent-hi:#ffc06b;
+  --rival:#d07a2a; --good:#79d634; --good-bg:#203a10; --bad:#ff6b6b; --blue:#49c0f8;
+  --fire:#ffa62b; --soft:#2a2418; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#131f24; --card:#131f24; --track:#37464f; --line:#37464f; --line2:#2b3a42;
+  --ink:#f1f7fb; --muted:#9db0bb; --band:#e06f00; --band-ink:#ffffff;
+  --accent:#ff9600; --accent-d:#c46300; --accent-hi:#ffc06b;
+  --rival:#d07a2a; --good:#79d634; --good-bg:#203a10; --bad:#ff6b6b; --blue:#49c0f8;
+  --fire:#ffa62b; --soft:#2a2418; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{background:var(--bg)}
+body{color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.45;font-weight:700}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+
+/* Banda superior */
+.band{background:var(--band);color:var(--band-ink);padding-inline:16px;padding-block:22px 26px}
+.band .in{max-width:620px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.band .head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.band h1{margin:0;font-size:clamp(1.6rem,6.5vw,2rem);font-weight:900;line-height:1.1;text-wrap:balance}
+.band .days{display:flex;align-items:center;gap:6px;font-weight:900;letter-spacing:.06em;margin-top:6px;opacity:.95}
+.lvl{flex:none;width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,.18);border:3px solid rgba(255,255,255,.55);display:grid;place-items:center;text-align:center;line-height:1}
+.lvl b{display:block;font-size:1.7rem;font-weight:900}
+.lvl small{font-size:.65rem;letter-spacing:.08em;font-weight:900}
+.big-card{background:var(--card);color:var(--ink);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:12px;box-shadow:0 4px 0 rgba(0,0,0,.12)}
+.big-card h2{margin:0;font-size:1.25rem;font-weight:800}
+
+/* Barras estilo juego */
+.pbar{position:relative;height:22px;border-radius:11px;background:var(--track);overflow:hidden}
+.pbar i{position:absolute;inset:0 auto 0 0;border-radius:11px;background:var(--accent);transition:width .7s cubic-bezier(.2,.9,.3,1.2)}
+.pbar i::after{content:"";position:absolute;left:10px;right:10px;top:4px;height:5px;border-radius:3px;background:rgba(255,255,255,.35)}
+.pbar span{position:absolute;inset:0;display:grid;place-items:center;font-weight:900;font-size:.9rem;color:var(--muted)}
+.pbar.full span,.pbar.half span{color:#fff;text-shadow:0 1px 0 rgba(0,0,0,.15)}
+.pbar.done i{background:var(--good)}
+.pbar.thin{height:12px}.pbar.thin i::after{top:2px;height:3px}
+
+.wrap{max-width:620px;margin:0 auto;padding-inline:16px;padding-block:18px 120px;display:flex;flex-direction:column;gap:26px}
+.sec-h{display:flex;justify-content:space-between;align-items:center;gap:10px;color:var(--muted);font-weight:900;font-size:.95rem;letter-spacing:.06em;text-transform:uppercase}
+.sec-h .tm{display:flex;align-items:center;gap:6px}
+.sec-h .tm.hot{color:var(--bad)}
+.section{display:flex;flex-direction:column;gap:16px}
+hr.sep{border:0;border-top:2px solid var(--line);margin:0}
+
+/* Stats tipo Duolingo */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{border:2px solid var(--line);border-radius:16px;padding:12px 8px;display:flex;align-items:center;justify-content:center;gap:8px}
+.stat b{font-size:1.35rem;font-weight:900}
+.stat small{display:block;color:var(--muted);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;font-weight:900;line-height:1}
+.stat svg{flex:none}
+
+/* Fila de desafío */
+.ch{display:grid;grid-template-columns:1fr 64px;gap:14px;align-items:center}
+.ch .t{font-size:1.12rem;font-weight:800;margin-bottom:8px}
+.ch .acts{display:flex;gap:8px;margin-top:10px}
+.chest{width:64px;height:58px;display:grid;place-items:center}
+.chest.open{animation:pop .5s ease}
+@keyframes pop{0%{transform:scale(.6)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
+
+/* Botones 3D */
+.b3{font:900 .9rem var(--font);letter-spacing:.05em;text-transform:uppercase;border-radius:14px;padding:11px 16px;cursor:pointer;border:2px solid var(--line);border-bottom-width:4px;background:var(--card);color:var(--blue)}
+.b3:active{transform:translateY(2px);border-bottom-width:2px}
+.b3.orange{background:var(--accent);color:#fff;border-color:var(--accent-d)}
+.b3.sm{padding:6px 12px;font-size:.78rem;border-radius:12px}
+.b3.ghost{color:var(--muted)}
+.b3:disabled{opacity:.5;cursor:default}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+
+/* Tarjetas */
+.card{border:2px solid var(--line);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0;background:var(--card)}
+.card h2{margin:0;font-size:1.2rem;font-weight:900}
+.versus .pic{background:var(--soft);border-radius:16px;padding:16px;display:flex;justify-content:space-around;align-items:flex-end;gap:10px}
+.who{display:flex;justify-content:space-between;font-size:1.1rem}
+.dot{display:inline-block;width:14px;height:14px;border-radius:50%;margin-right:8px;vertical-align:-1px}
+.vbar{position:relative;height:22px;border-radius:11px;background:var(--track);overflow:hidden;display:flex}
+.vbar i{display:block;height:100%}
+.vbar span{position:absolute;inset:0;display:grid;place-items:center;font-weight:900;font-size:.9rem;color:#fff;text-shadow:0 1px 0 rgba(0,0,0,.2)}
+
+/* Metas */
+.here-num{font-size:clamp(2.2rem,10vw,3rem);font-weight:900;line-height:1}
+.here-num span{color:var(--muted);font-size:.45em}
+.goal{display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center}
+.goal .ico{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-weight:900;border:3px solid var(--line);color:var(--muted);background:var(--card)}
+.goal.done .ico{background:var(--good);border-color:var(--good);color:#fff}
+.goal.now .ico{border-color:var(--accent);color:var(--accent)}
+.tag{display:inline-block;font-size:.72rem;font-weight:900;letter-spacing:.06em;text-transform:uppercase;padding:3px 10px;border-radius:999px;background:var(--track);color:var(--muted)}
+.tag.now{background:var(--soft);color:var(--accent-d)}
+.tag.ok{background:var(--good-bg);color:var(--good)}
+.next{background:var(--soft);border-radius:14px;padding:14px;border:2px solid var(--accent-hi)}
+
+.mixrow .h{display:flex;justify-content:space-between;gap:10px;font-size:.95rem;margin-bottom:6px}
+
+/* Formularios */
+form.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.full{grid-column:1/-1}
+label.f{display:flex;flex-direction:column;gap:5px;font-size:.85rem;font-weight:800;color:var(--muted);min-width:0}
+input,select,textarea{font:700 1rem var(--font);padding:11px 12px;border:2px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);width:100%}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.toast{font-size:.95rem;color:var(--good);font-weight:900;min-height:1.3em}
+@media (max-width:420px){form.grid{grid-template-columns:1fr}.stats{gap:6px}.stat{flex-direction:column;gap:2px;text-align:center}}
+
+.item{border:2px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:6px}
+.item .h{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.item .t{font-weight:800;min-width:0;overflow-wrap:anywhere}
+.item .meta{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.85rem;color:var(--muted)}
+.empty{padding:20px;text-align:center;border:2px dashed var(--line);border-radius:14px;color:var(--muted)}
+.check{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:2px solid var(--line)}
+.check:last-child{border-bottom:0}
+.check input{width:22px;height:22px;margin-top:1px;flex:none;accent-color:var(--good)}
+.check.done span{color:var(--muted);text-decoration:line-through}
+.check em{font-style:normal;color:var(--accent-d);font-size:.8rem;margin-left:auto;white-space:nowrap}
+details{border:2px solid var(--line);border-radius:14px;padding:12px}
+details summary{cursor:pointer;font-weight:900}
+.books{margin:10px 0 0;padding:0}.books li{margin:0 0 6px 1.1em}
+svg.chart text{fill:var(--muted);font-family:var(--font);font-size:11px;font-weight:700}
+
+/* XP flotante */
+.xp-pop{position:fixed;left:50%;top:40%;transform:translate(-50%,0);background:var(--accent);color:#fff;font-weight:900;font-size:1.4rem;padding:10px 20px;border-radius:16px;border-bottom:4px solid var(--accent-d);z-index:50;pointer-events:none;animation:rise 1.4s ease forwards}
+@keyframes rise{0%{opacity:0;transform:translate(-50%,20px) scale(.8)}20%{opacity:1;transform:translate(-50%,0) scale(1.05)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-50px)}}
+
+/* Menú inferior */
+nav.bottom{position:fixed;left:0;right:0;bottom:0;background:var(--bg);border-top:2px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));z-index:10;gap:4px}
+nav.bottom button{background:none;border:2px solid transparent;border-radius:14px;padding:6px 2px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--muted);font:800 .7rem var(--font)}
+nav.bottom button[aria-selected="true"]{border-color:var(--blue);background:color-mix(in srgb,var(--blue) 14%,var(--bg));color:var(--blue)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+<style>body{margin:0}</style>
+</head>
+<body>
+
+<header class="band">
+  <div class="in">
+    <div class="head">
+      <div><h1 id="monthTitle">Desafío de octubre</h1><div class="days" id="monthDays"></div></div>
+      <div class="lvl" id="lvlBadge"></div>
+    </div>
+    <div class="big-card"><h2 id="monthGoal">Publica 16 videos</h2><div class="pbar" id="monthBar"></div></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- INICIO -->
+  <section id="tab-inicio" class="pane" style="display:flex;flex-direction:column;gap:26px">
+    <div class="stats" id="stats"></div>
+
+    <div class="section">
+      <div class="sec-h"><span>Desafíos del día</span><span class="tm" id="dayLeft"></span></div>
+      <div id="daily" class="section" style="gap:26px"></div>
+    </div>
+    <hr class="sep">
+
+    <div class="section">
+      <div class="sec-h"><span>Tú contra tu semana pasada</span><span class="tm hot" id="weekLeft"></span></div>
+      <div class="card versus" id="versus"></div>
+    </div>
+    <hr class="sep">
+
+    <div class="section">
+      <div class="sec-h"><span>Tu camino a 5,000</span></div>
+      <div class="card" id="hero"></div>
+      <div class="card"><h2>Tu siguiente misión</h2><div class="next" id="nextTask"></div><button class="b3" type="button" data-go="ruta" style="align-self:flex-start">Ver ruta completa</button></div>
+    </div>
+
+    <div class="section">
+      <div class="sec-h"><span>Pilares del mes</span></div>
+      <div class="card" id="mix"></div>
+    </div>
+  </section>
+
+  <!-- VIDEOS -->
+  <section id="tab-videos" class="pane" hidden style="flex-direction:column;gap:20px">
+    <div class="card">
+      <h2 id="vTitle">Registrar video</h2>
+      <form class="grid" id="vForm">
+        <label class="f">Fecha<input id="v-fecha" type="date" required></label>
+        <label class="f">Pilar<select id="v-pilar"><option value="valor">Valor (65%)</option><option value="marca">Marca personal (20%)</option><option value="algoritmo">Algoritmo (15%)</option></select></label>
+        <label class="f full">Título o gancho<input id="v-tit" type="text" required placeholder="Te enseño a calcular el margen real…"></label>
+        <label class="f">Tipo<select id="v-tipo"><option value="organico">Orgánico (+50 XP)</option><option value="producto">Producto / afiliado (+40 XP)</option><option value="live">Live (+80 XP)</option></select></label>
+        <label class="f">Vistas<input id="v-vis" type="number" min="0" placeholder="Después (+10 XP)"></label>
+        <label class="f">Likes<input id="v-lik" type="number" min="0"></label>
+        <label class="f">Seguidores ganados<input id="v-seg" type="number" min="0"></label>
+        <div class="row full"><button class="b3 orange" type="submit" id="vSubmit">Guardar video</button><button class="b3 ghost" type="button" id="vCancel" hidden>Cancelar</button><span class="toast" id="vToast"></span></div>
+      </form>
+    </div>
+    <div class="card"><h2>Mis videos</h2><span class="tag" id="ratio">Sin videos todavía</span><div id="vList" style="display:flex;flex-direction:column;gap:10px"></div></div>
+  </section>
+
+  <!-- REGISTRO -->
+  <section id="tab-registro" class="pane" hidden style="flex-direction:column;gap:20px">
+    <div class="card">
+      <h2>Corte semanal <span class="tag now">+40 XP</span></h2>
+      <p class="muted" style="margin:0;font-weight:600">Cada domingo abre TikTok Studio y copia los números de los últimos 7 días. Cada seguidor nuevo suma 1 XP.</p>
+      <form class="grid" id="ciForm">
+        <label class="f">Fecha<input id="ci-fecha" type="date" required></label>
+        <label class="f">Seguidores totales<input id="ci-seg" type="number" min="0" required></label>
+        <label class="f">Vistas<input id="ci-vis" type="number" min="0"></label>
+        <label class="f">Likes<input id="ci-lik" type="number" min="0"></label>
+        <label class="f">Compartidos<input id="ci-sha" type="number" min="0"></label>
+        <label class="f">Visitas al perfil<input id="ci-per" type="number" min="0"></label>
+        <label class="f full">Nota de la semana<input id="ci-nota" type="text" placeholder="Qué funcionó y qué cambio"></label>
+        <div class="row full"><button class="b3 orange" type="submit">Guardar corte</button><span class="toast" id="ciToast"></span></div>
+      </form>
+    </div>
+    <div class="card"><h2>Seguidores en el tiempo</h2><div id="chart"></div></div>
+    <div class="card"><h2>Historial</h2><div id="ciList" style="display:flex;flex-direction:column;gap:10px"></div></div>
+  </section>
+
+  <!-- RUTA -->
+  <section id="tab-ruta" class="pane" hidden style="flex-direction:column;gap:20px"><div id="phases" style="display:flex;flex-direction:column;gap:20px"></div></section>
+
+  <!-- RESPALDO -->
+  <section id="tab-respaldo" class="pane" hidden style="flex-direction:column;gap:20px">
+    <div class="card">
+      <h2>Respaldo de tus datos</h2>
+      <p class="muted" style="margin:0;font-weight:600">Los datos se guardan solo en este navegador. Copia el respaldo cada semana y pégalo en Notion.</p>
+      <div class="row"><button class="b3 orange" id="copyBtn" type="button">Copiar respaldo</button><span class="toast" id="copyToast"></span></div>
+      <label class="f">Respaldo / restaurar<textarea id="backup" rows="6" placeholder="Pega aquí un respaldo para restaurarlo"></textarea></label>
+      <div class="row"><button class="b3" id="restoreBtn" type="button">Restaurar</button><span class="toast" id="restoreToast"></span></div>
+    </div>
+  </section>
+</main>
+
+<nav class="bottom" role="tablist">
+  <button role="tab" data-tab="inicio" aria-selected="true"><svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><path d="M4 15 16 5l12 10" fill="none" stroke="#ff4b4b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 14h16v13H8z" fill="#ffc800"/><path d="M14 20h4v7h-4z" fill="#cd7900"/></svg>Inicio</button>
+  <button role="tab" data-tab="videos" aria-selected="false"><svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><rect x="4" y="8" width="18" height="16" rx="4" fill="#1cb0f6"/><path d="M22 14l7-4v12l-7-4z" fill="#1899d6"/><circle cx="10" cy="14" r="2" fill="#fff"/></svg>Videos</button>
+  <button role="tab" data-tab="registro" aria-selected="false"><svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><rect x="5" y="17" width="5" height="10" rx="2" fill="#58cc02"/><rect x="13.5" y="11" width="5" height="16" rx="2" fill="#58cc02"/><rect x="22" y="5" width="5" height="22" rx="2" fill="#58a700"/></svg>Registro</button>
+  <button role="tab" data-tab="ruta" aria-selected="false"><svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><path d="M7 4v24" stroke="#777" stroke-width="3" stroke-linecap="round"/><path d="M8 5h17l-4 5 4 5H8z" fill="#ce82ff"/></svg>Ruta</button>
+  <button role="tab" data-tab="respaldo" aria-selected="false"><svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><path d="M7 5h14l5 5v17H7z" fill="#ff9600"/><rect x="11" y="5" width="9" height="7" fill="#fff4e5"/><rect x="11" y="18" width="11" height="7" rx="1" fill="#fff4e5"/></svg>Respaldo</button>
+</nav>
+
+<script>
+(function(){
+const KEY='modo-crecimiento-v1';
+const GOALS=[
+  {n:1000,name:'1,000 seguidores',why:'Humberto te envía muestras'},
+  {n:2000,name:'2,000 seguidores',why:'Se activa TikTok Shop afiliado'},
+  {n:5000,name:'5,000 seguidores',why:'Autoridad y mejores comisiones'}
+];
+const LEVELS=['Novato','Aprendiz','Constante','Creador','Referente','Influencer','Leyenda'];
+const PILARES={valor:{t:'Valor / Educación',s:'Valor',meta:65},marca:{t:'Marca personal',s:'Marca',meta:20},algoritmo:{t:'Impulso algoritmo',s:'Algoritmo',meta:15}};
+const TIPOS={organico:'Orgánico',producto:'Producto',live:'Live'};
+const XPV={organico:50,producto:40,live:80};
+const META_MES=16, XP_NIVEL=300, XP_DESAFIO=25, XP_TAREA=20, XP_CORTE=40;
+const POOL=[
+  {k:'coment',t:'Responde 10 comentarios',n:10,step:1,c:'#1cb0f6'},
+  {k:'ganchos',t:'Escribe 3 ganchos para próximos videos',n:3,step:1,c:'#ce82ff'},
+  {k:'interact',t:'Deja 3 comentarios útiles en cuentas de tu nicho',n:3,step:1,c:'#ff4b4b'},
+  {k:'lectura',t:'Lee 10 páginas y anota una idea de video',n:1,step:1,c:'#58cc02'},
+  {k:'grabar',t:'Graba 2 tomas de b-roll en la tienda',n:2,step:1,c:'#ffc800'},
+  {k:'estudio',t:'Mira 3 videos de tu nicho y anota el gancho',n:3,step:1,c:'#2b70c9'},
+  {k:'story',t:'Publica 1 historia del día',n:1,step:1,c:'#ff86d0'}
+];
+const PHASES=[
+ {id:'f1',title:'Fase 1 · Arranque',range:[0,1000],goal:'Llegar a 1,000 con contenido de valor y una cuenta clara',
+  tasks:[['bio','Cambiar bio: dueño de tlapalería en Tabasco, negocio, dinero y disciplina'],['nombre','Cambiar nombre de perfil a "Gary | Emprendiendo en Tabasco"'],['seguir','Seguir 30 a 60 cuentas de emprendedores, finanzas y dueños de negocio'],['lista10','Escribir la lista de los primeros 10 videos del pilar de Valor'],['ritmo','Publicar mínimo 4 videos por semana, entre 6 y 9 pm'],['portadas','Portadas con texto grande y legible en cada video'],['livegym','Probar un live desde la tienda o el gym'],['comentarios','Responder todos los comentarios y convertir preguntas en videos'],['corte','Hacer el corte semanal cada domingo en esta app']],
+  books:[['Show Your Work','Austin Kleon','Documentar en lugar de presumir'],['Crush It!','Gary Vaynerchuk','Constancia y volumen en una plataforma'],['$100M Leads','Alex Hormozi','Dar valor gratis que atrae']]},
+ {id:'f2',title:'Fase 2 · Preparar la venta',range:[1000,2000],goal:'Llegar a 2,000 con audiencia compradora y el formato de producto dominado',
+  tasks:[['muestras','Avisar a Humberto que llegaste a 1,000 y pedir las muestras'],['guiones','Escribir guion antes de cada video de producto (gancho, uso real, llamado a la acción)'],['regla21','Respetar la regla 2 a 1: dos orgánicos por cada video de producto'],['5y1','Probar el sistema de 5 videos y 1 live con un mismo producto'],['angulos','Un video diario por producto, cada día con un ángulo distinto'],['fiscal','Dejar listo RFC y cuenta bancaria con Mitzy antes de la primera comisión'],['studio','Confirmar en TikTok Studio el requisito exacto de seguidores']],
+  books:[['Building a StoryBrand','Donald Miller','El cliente es el héroe, tú el guía'],['Contagious','Jonah Berger','Por qué la gente comparte algo'],['Influence','Robert Cialdini','Confianza y prueba social al recomendar']]},
+ {id:'f3',title:'Fase 3 · Afiliado activo',range:[2000,5000],goal:'Vender como afiliado y crecer hasta 5,000',
+  tasks:[['alta','Darte de alta en TikTok Shop para Creadores'],['escaparate','Armar el escaparate solo con productos que usas'],['lives','Lives en fin de semana o a la hora de comida'],['publicacion','Mantener la tasa de publicación de muestras arriba de 95%'],['resenas','Reseñas honestas: lo negativo como "puntos de mejora"'],['negociar','Negociar comisión arriba de 6% con las tiendas que mejor funcionen'],['nocobro','No activar el cobro anticipado mientras el volumen sea bajo'],['datos','Revisar qué videos venden y hacer más de ese ángulo']],
+  books:[['$100M Offers','Alex Hormozi','Armar una oferta que se vende sola'],['Expert Secrets','Russell Brunson','Convertirte en referencia de tu nicho'],['Hábitos atómicos','James Clear','Sostener el ritmo sin resultados']]}
+];
+
+/* ---------- estado ---------- */
+const iso=d=>{const x=new Date(d);x.setMinutes(x.getMinutes()-x.getTimezoneOffset());return x.toISOString().slice(0,10)};
+const today=()=>iso(new Date());
+function seed(){return{checkins:[{id:'c0',fecha:'2026-10-01',seg:339,vis:784,lik:18,sha:1,per:4,nota:'Punto de partida (últimos 28 días). Replanteo de cuenta.',base:true}],videos:[],checks:{},daily:{}}}
+let S;try{S=JSON.parse(localStorage.getItem(KEY))||seed()}catch(e){S=seed()}
+S.checkins=S.checkins||[];S.videos=S.videos||[];S.checks=S.checks||{};S.daily=S.daily||{};
+if(S.checkins.length&&!S.checkins.some(c=>c.base)){const f=[...S.checkins].sort((a,b)=>a.fecha.localeCompare(b.fecha))[0];f.base=true}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+const $=id=>document.getElementById(id);
+const fmt=n=>(n==null||n==='')?'—':Number(n).toLocaleString('es-MX');
+const uid=()=>Math.random().toString(36).slice(2,9);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const parseD=s=>{const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
+const fmtD=s=>parseD(s).toLocaleDateString('es-MX',{day:'numeric',month:'short'});
+const sortedCI=()=>[...S.checkins].sort((a,b)=>a.fecha.localeCompare(b.fecha));
+const current=()=>{const c=sortedCI();return c.length?Number(c[c.length-1].seg):0};
+const curPhase=()=>{const f=current();return PHASES.find(p=>f<p.range[1])||PHASES[2]};
+function weekStart(d){const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());x.setDate(x.getDate()-((x.getDay()+6)%7));return x}
+
+/* ---------- desafíos del día ---------- */
+function hash(s){let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))>>>0;return h}
+function dailyFor(day){
+  const h=hash(day);const a=POOL[h%POOL.length];let b=POOL[(h>>3)%POOL.length];if(b.k===a.k)b=POOL[(POOL.indexOf(a)+1)%POOL.length];
+  const vids=S.videos.filter(v=>v.fecha===day).length;
+  const d=S.daily[day]||{};
+  return [{k:'video',t:'Publica 1 video hoy',n:1,auto:true,val:Math.min(1,vids),c:'#ff9600'},
+          {...a,val:Math.min(a.n,d[a.k]||0)},{...b,val:Math.min(b.n,d[b.k]||0)}];
+}
+function dailyDone(day){return dailyFor(day).filter(x=>x.val>=x.n).length}
+
+/* ---------- XP ---------- */
+function xpEvents(){
+  const ev=[];
+  S.videos.forEach(v=>{ev.push({f:v.fecha,x:XPV[v.tipo]||50});if(v.vis!=null&&v.vis!=='')ev.push({f:v.fecha,x:10})});
+  const c=sortedCI();c.forEach((x,i)=>{if(!x.base)ev.push({f:x.fecha,x:XP_CORTE});if(i){const d=x.seg-c[i-1].seg;if(d>0)ev.push({f:x.fecha,x:d})}});
+  Object.entries(S.checks).forEach(([k,v])=>{if(v)ev.push({f:typeof v==='string'?v:null,x:XP_TAREA})});
+  const days=new Set(Object.keys(S.daily));S.videos.forEach(v=>days.add(v.fecha));
+  days.forEach(d=>{const n=dailyDone(d);if(n)ev.push({f:d,x:n*XP_DESAFIO})});
+  return ev;
+}
+const totalXP=()=>xpEvents().reduce((a,e)=>a+e.x,0);
+function xpBetween(a,b){return xpEvents().filter(e=>e.f&&e.f>=a&&e.f<=b).reduce((s,e)=>s+e.x,0)}
+function activeDays(){
+  const s=new Set();S.videos.forEach(v=>s.add(v.fecha));S.checkins.forEach(c=>{if(!c.base)s.add(c.fecha)});
+  Object.values(S.checks).forEach(v=>{if(typeof v==='string')s.add(v)});
+  Object.entries(S.daily).forEach(([d,o])=>{if(Object.values(o).some(x=>x>0))s.add(d)});return s;
+}
+function streak(){const s=activeDays();let d=new Date();if(!s.has(iso(d)))d.setDate(d.getDate()-1);let n=0;while(s.has(iso(d))){n++;d.setDate(d.getDate()-1)}return n}
+
+/* ---------- íconos ---------- */
+const flame=(on,sz=30)=>`<svg width="${sz}" height="${sz}" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3c1 5 8 8 8 16a8 8 0 0 1-16 0c0-4 2-6 3-8 1 3 2 4 3 4-1-5 0-9 2-12z" fill="${on?'#ff9600':'#c4c4c4'}"/><path d="M16 15c1 3 4 4 4 8a4 4 0 0 1-8 0c0-2 1-3 2-4 0 1 1 2 2 2 0-2-1-4 0-6z" fill="${on?'#ffc800':'#e5e5e5'}"/></svg>`;
+const bolt=`<svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><path d="M18 3 7 18h8l-2 11 12-16h-8z" fill="#ffc800" stroke="#e5a500" stroke-width="1.5" stroke-linejoin="round"/></svg>`;
+const shield=`<svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3 27 7v8c0 7-5 11-11 14C10 26 5 22 5 15V7z" fill="#1cb0f6"/><path d="M16 8l2.2 4.6 5 .6-3.7 3.4 1 5-4.5-2.6-4.5 2.6 1-5L8.8 13.2l5-.6z" fill="#fff"/></svg>`;
+const clock=`<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>`;
+function chest(color,open){
+  const lid=open?`<g transform="rotate(-25 10 22)"><rect x="8" y="10" width="44" height="14" rx="4" fill="${color}"/><rect x="8" y="10" width="44" height="5" rx="2" fill="rgba(255,255,255,.35)"/></g><path d="M16 24h28" stroke="#ffe066" stroke-width="3"/>`
+    :`<rect x="8" y="14" width="44" height="14" rx="4" fill="${color}"/><rect x="8" y="14" width="44" height="5" rx="2" fill="rgba(255,255,255,.35)"/>`;
+  return `<svg width="64" height="58" viewBox="0 0 60 54" aria-hidden="true"><rect x="8" y="26" width="44" height="22" rx="4" fill="${color}" ${open?'':'opacity=".9"'}/><rect x="8" y="26" width="44" height="22" rx="4" fill="rgba(0,0,0,.12)"/>${lid}<rect x="26" y="${open?28:24}" width="8" height="9" rx="2" fill="#fff" stroke="rgba(0,0,0,.15)"/>${open?'<path d="M22 6l2 4M30 3v5M38 6l-2 4" stroke="#ffc800" stroke-width="2.5" stroke-linecap="round"/>':''}</svg>`;
+}
+function pbar(val,n,cls=''){const p=n?Math.min(100,val/n*100):0;const st=p>=100?'done full':p>=45?'half':'';return `<div class="pbar ${cls} ${st}"><i style="width:${p}%"></i><span class="num">${fmt(val)} / ${fmt(n)}</span></div>`}
+
+/* ---------- render ---------- */
+function renderBand(){
+  const d=new Date();const mes=d.toLocaleDateString('es-MX',{month:'long'});
+  const last=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();const left=last-d.getDate()+1;
+  $('monthTitle').textContent='Desafío de '+mes;
+  $('monthDays').innerHTML=`${clock} ${left} ${left===1?'DÍA':'DÍAS'}`;
+  const ym=today().slice(0,7);const n=S.videos.filter(v=>v.fecha.slice(0,7)===ym).length;
+  $('monthGoal').textContent=n>=META_MES?'¡Desafío del mes completado!':`Publica ${META_MES} videos este mes`;
+  $('monthBar').outerHTML=pbar(n,META_MES).replace('<div class="pbar','<div id="monthBar" class="pbar');
+  const xp=totalXP();const lv=Math.floor(xp/XP_NIVEL)+1;
+  $('lvlBadge').innerHTML=`<div><small>NIVEL</small><b>${lv}</b></div>`;
+}
+function renderStats(){
+  const xp=totalXP(),st=streak(),lv=Math.floor(xp/XP_NIVEL)+1,into=xp%XP_NIVEL;
+  $('stats').innerHTML=`<div class="stat">${flame(st>0)}<div><b class="num" style="color:${st?'var(--fire)':'var(--muted)'}">${st}</b><small>días racha</small></div></div>
+   <div class="stat">${bolt}<div><b class="num">${fmt(xp)}</b><small>XP total</small></div></div>
+   <div class="stat">${shield}<div><b style="font-size:1rem">${LEVELS[Math.min(LEVELS.length-1,lv-1)]}</b><small class="num">${into}/${XP_NIVEL} al ${lv+1}</small></div></div>`;
+}
+function renderDaily(){
+  const day=today();const now=new Date();const h=Math.ceil((new Date(now.getFullYear(),now.getMonth(),now.getDate()+1)-now)/36e5);
+  $('dayLeft').innerHTML=`${clock} ${h}H`;
+  $('daily').innerHTML=dailyFor(day).map(x=>{const done=x.val>=x.n;
+    return `<div class="ch"><div><div class="t">${x.t}</div>${pbar(x.val,x.n)}
+      ${x.auto?(done?'':`<div class="acts"><button class="b3 sm" data-go="videos">Registrar video</button></div>`)
+      :`<div class="acts"><button class="b3 sm" data-inc="${x.k}" ${done?'disabled':''}>+1</button>${x.val>0&&!done?`<button class="b3 sm ghost" data-dec="${x.k}">−1</button>`:''}</div>`}
+      </div><div class="chest ${done?'open':''}">${chest(done?x.c:'#c9c9c9',done)}</div></div>`}).join('');
+}
+function renderVersus(){
+  const ws=weekStart(new Date());const we=new Date(ws);we.setDate(ws.getDate()+6);
+  const ps=new Date(ws);ps.setDate(ws.getDate()-7);const pe=new Date(ws);pe.setDate(ws.getDate()-1);
+  const me=xpBetween(iso(ws),iso(we)),past=xpBetween(iso(ps),iso(pe));
+  const goal=Math.max(300,Math.round(past*1.1/10)*10);
+  const days=Math.ceil((we.setHours(23,59)-Date.now())/864e5);
+  $('weekLeft').innerHTML=`${clock} ${days} ${days===1?'DÍA':'DÍAS'}`;
+  const pm=Math.min(100,me/goal*100),pp=Math.max(0,Math.min(100-pm,past/goal*100));
+  const win=me>past;
+  $('versus').innerHTML=`<div class="pic">
+      <div style="text-align:center">${flame(me>0,54)}<div class="num" style="font-size:1.3rem;font-weight:900;color:var(--accent-d)">${fmt(me)}</div></div>
+      <div style="font-weight:900;font-size:1.3rem;color:var(--muted);align-self:center">VS</div>
+      <div style="text-align:center;opacity:.65">${flame(true,54).replace(/#ff9600/,'#b85a00').replace(/#ffc800/,'#e0a060')}<div class="num" style="font-size:1.3rem;font-weight:900;color:var(--rival)">${fmt(past)}</div></div></div>
+    <div class="row" style="justify-content:space-between"><h2 style="font-size:1.15rem">Gana ${fmt(goal)} XP esta semana</h2>${win?'<span class="tag ok">Vas ganando</span>':'<span class="tag now">Remóntale</span>'}</div>
+    <div class="vbar"><i style="width:${pm}%;background:var(--accent)"></i><i style="width:${pp}%;background:var(--rival)"></i><span class="num">${fmt(me)} / ${fmt(goal)}</span></div>
+    <div class="who"><span><i class="dot" style="background:var(--accent)"></i>Tú esta semana</span><span class="muted num">${fmt(me)} XP</span></div>
+    <div class="who"><span><i class="dot" style="background:var(--rival)"></i>Tú la semana pasada</span><span class="muted num">${fmt(past)} XP</span></div>`;
+}
+function weeklyRate(){const c=sortedCI();if(c.length<2)return null;const a=c[0],b=c[c.length-1];const days=(parseD(b.fecha)-parseD(a.fecha))/864e5;if(days<5)return null;return(b.seg-a.seg)/days*7}
+function renderHero(){
+  const f=current();const p=curPhase();const g=GOALS.find(x=>f<x.n);
+  let eta='Haz tu corte el domingo para calcular cuándo llegas.';const r=weeklyRate();
+  if(g&&r&&r>0){const w=Math.ceil((g.n-f)/r);const dt=new Date();dt.setDate(dt.getDate()+w*7);eta=`A tu ritmo (${r.toFixed(1)} por semana) llegas en ≈ ${w} semanas, hacia ${dt.toLocaleDateString('es-MX',{month:'long',year:'numeric'})}.`}
+  else if(g&&r!==null)eta='Con el ritmo actual no te acercas. Sube a 4 videos por semana.';
+  let nowSet=false;
+  const goals=GOALS.map((x,i)=>{const done=f>=x.n;let st='lock';if(done)st='done';else if(!nowSet){st='now';nowSet=true}
+    return `<div class="goal ${st}"><div class="ico">${st==='done'?'✓':i+1}</div><div style="min-width:0"><div>${x.name}</div><div class="muted" style="font-size:.85rem;font-weight:600">${x.why}</div></div><span class="tag ${st==='done'?'ok':st==='now'?'now':''}">${st==='done'?'Lograda':st==='now'?'En curso':'Bloqueada'}</span></div>`}).join('');
+  $('hero').innerHTML=`<span class="tag now" style="align-self:flex-start">Estás en la ${p.title}</span>
+    ${g?`<div class="here-num num">${fmt(f)} <span>/ ${fmt(g.n)}</span></div>${pbar(f,g.n)}<div><span style="color:var(--accent-d)">Te faltan ${fmt(g.n-f)} seguidores.</span> <span class="muted" style="font-weight:600">${eta}</span></div>`:`<div class="here-num">${fmt(f)}</div><div>Llegaste a 5,000.</div>`}
+    <hr class="sep">${goals}`;
+  const t=p.tasks.find(t=>!S.checks[p.id+'.'+t[0]]);const dn=p.tasks.filter(t=>S.checks[p.id+'.'+t[0]]).length;
+  $('nextTask').innerHTML=t?`<div style="font-size:1.05rem">${t[1]}</div><div class="muted" style="font-size:.85rem;margin-top:6px">+${XP_TAREA} XP · ${dn} de ${p.tasks.length} misiones de la fase</div><button class="b3 orange sm" style="margin-top:10px" data-quick="${p.id}.${t[0]}">Ya lo hice</button>`:`Terminaste todas las misiones de la ${p.title}. Ahora solo toca sostener el ritmo.`;
+}
+function renderMix(){
+  const ym=today().slice(0,7);const vs=S.videos.filter(v=>v.fecha.slice(0,7)===ym);const n=vs.length;
+  $('mix').innerHTML=Object.entries(PILARES).map(([k,p])=>{const c=vs.filter(v=>v.pilar===k).length;const pct=n?Math.round(c/n*100):0;
+    const ok=n&&Math.abs(pct-p.meta)<=10;
+    return `<div class="mixrow"><div class="h"><span>${p.t}</span><span class="${ok?'':'muted'} num" style="${ok?'color:var(--good)':''}">${pct}% · meta ${p.meta}%</span></div><div class="pbar thin ${ok?'done':''}"><i style="width:${pct}%"></i></div></div>`}).join('')+(n?'':'<div class="muted" style="font-weight:600">Registra tu primer video del mes para ver tu mezcla.</div>');
+}
+function renderChart(){
+  const c=sortedCI();
+  if(c.length<2){$('chart').innerHTML=`<div class="empty">Tu línea aparece desde el segundo corte. Hoy arrancas en ${fmt(current())}.</div>`;return}
+  const W=560,H=220,P={l:46,r:12,t:16,b:28};
+  const xs=c.map(x=>parseD(x.fecha).getTime());const x0=Math.min(...xs),x1=Math.max(...xs);
+  const ymax=Math.max(...c.map(x=>x.seg));const g=GOALS.find(x=>x.n>ymax)||GOALS[2];const yMax=Math.max(g.n,ymax);
+  const X=t=>P.l+(t-x0)/(x1-x0||1)*(W-P.l-P.r),Y=v=>P.t+(1-v/yMax)*(H-P.t-P.b);
+  const pts=c.map(x=>`${X(parseD(x.fecha).getTime()).toFixed(1)},${Y(x.seg).toFixed(1)}`);const last=c[c.length-1];
+  let s=`<svg class="chart" viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Seguidores por corte">`;
+  [0,.25,.5,.75,1].forEach(r=>{const t=Math.round(yMax*r);s+=`<line x1="${P.l}" x2="${W-P.r}" y1="${Y(t)}" y2="${Y(t)}" stroke="var(--line)" stroke-width="1.5"/><text x="${P.l-6}" y="${Y(t)+4}" text-anchor="end">${t.toLocaleString('es-MX')}</text>`});
+  s+=`<line x1="${P.l}" x2="${W-P.r}" y1="${Y(g.n)}" y2="${Y(g.n)}" stroke="var(--accent)" stroke-width="2" stroke-dasharray="6 5"/><text x="${W-P.r}" y="${Y(g.n)-6}" text-anchor="end">Meta ${g.n.toLocaleString('es-MX')}</text>`;
+  s+=`<polygon points="${X(x0)},${Y(0)} ${pts.join(' ')} ${X(x1)},${Y(0)}" fill="var(--accent)" fill-opacity=".15"/><polyline points="${pts.join(' ')}" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linejoin="round"/><circle cx="${X(x1)}" cy="${Y(last.seg)}" r="6" fill="var(--accent)"/>`;
+  s+=`<text x="${P.l}" y="${H-8}">${fmtD(c[0].fecha)}</text><text x="${W-P.r}" y="${H-8}" text-anchor="end">${fmtD(last.fecha)}</text></svg>`;
+  $('chart').innerHTML=s;
+}
+function renderCI(){
+  const c=sortedCI();
+  $('ciList').innerHTML=c.map((x,i)=>{const d=i?x.seg-c[i-1].seg:null;const tasa=x.vis?(x.lik/x.vis*100).toFixed(2)+'%':'—';
+    return `<div class="item"><div class="h"><div class="t">${fmtD(x.fecha)} · ${fmt(x.seg)} seguidores ${d==null?'':`<span style="color:${d>0?'var(--good)':d<0?'var(--bad)':'var(--muted)'}">(${d>0?'+':''}${fmt(d)})</span>`}</div>${x.base?'<span class="tag">Inicio</span>':`<button class="b3 sm ghost" data-delci="${x.id}">Borrar</button>`}</div>
+      <div class="meta num"><span>Vistas ${fmt(x.vis)}</span><span>Likes ${fmt(x.lik)}</span><span>Tasa ${tasa}</span><span>Compart. ${fmt(x.sha)}</span><span>Perfil ${fmt(x.per)}</span></div>${x.nota?`<div style="font-weight:600">${esc(x.nota)}</div>`:''}</div>`}).reverse().join('')||'<div class="empty">Sin cortes todavía.</div>';
+}
+let editing=null;
+function renderVideos(){
+  const v=[...S.videos].sort((a,b)=>b.fecha.localeCompare(a.fecha));const prod=S.videos.filter(x=>x.tipo==='producto').length;
+  $('ratio').textContent=S.videos.length?`${S.videos.length} videos · ${S.videos.length-prod} orgánicos · ${prod} de producto`:'Sin videos todavía';
+  if(!v.length){$('vList').innerHTML='<div class="empty">Registra cada video que publiques. A los 3 días regresa a poner vistas y ganas +10 XP extra.</div>';return}
+  const best=Math.max(...v.map(x=>Number(x.vis)||0));
+  $('vList').innerHTML=v.map(x=>`<div class="item"><div class="h"><div class="t">${esc(x.tit)} ${best>0&&Number(x.vis)===best?'<span class="tag ok">Mejor</span>':''}</div><div class="row" style="gap:6px;flex-wrap:nowrap"><button class="b3 sm" data-editv="${x.id}">Editar</button><button class="b3 sm ghost" data-delv="${x.id}">Borrar</button></div></div>
+    <div class="meta"><span>${fmtD(x.fecha)}</span><span class="tag">${PILARES[x.pilar].s}</span><span class="tag">${TIPOS[x.tipo]}</span>${x.vis==null||x.vis===''?'<span class="tag now">Falta poner vistas</span>':''}</div>
+    <div class="meta num"><span>Vistas ${fmt(x.vis)}</span><span>Likes ${fmt(x.lik)}</span><span>Seguidores +${fmt(x.seg)}</span></div></div>`).join('');
+}
+function renderPhases(){
+  const f=current();
+  $('phases').innerHTML=PHASES.map(p=>{const cur=f>=p.range[0]&&f<p.range[1],done=f>=p.range[1];const dn=p.tasks.filter(t=>S.checks[p.id+'.'+t[0]]).length;
+    return `<div class="card" style="${cur?'border-color:var(--accent)':''}"><div class="row" style="justify-content:space-between"><h2>${p.title}</h2><span class="tag ${done?'ok':cur?'now':''}">${done?'Superada':cur?'Estás aquí':'Bloqueada'}</span></div>
+      <div class="muted" style="font-weight:600">${p.goal} · <span class="num">${fmt(p.range[0])} → ${fmt(p.range[1])}</span></div>
+      ${pbar(dn,p.tasks.length)}
+      <div>${p.tasks.map(t=>{const k=p.id+'.'+t[0],on=!!S.checks[k];return `<label class="check ${on?'done':''}"><input type="checkbox" id="chk-${p.id}-${t[0]}" data-chk="${k}" ${on?'checked':''}><span>${t[1]}</span><em>+${XP_TAREA} XP</em></label>`}).join('')}</div>
+      <details><summary>Libros para esta fase</summary><ul class="books">${p.books.map(b=>`<li><strong>${b[0]}</strong>, ${b[1]}. <span class="muted">${b[2]}</span></li>`).join('')}</ul></details></div>`}).join('');
+}
+function renderAll(){renderBand();renderStats();renderDaily();renderVersus();renderHero();renderMix();renderChart();renderCI();renderVideos();renderPhases()}
+
+/* ---------- acciones ---------- */
+function award(fn){const before=totalXP();fn();save();renderAll();const g=totalXP()-before;if(g>0)popXP(g)}
+function popXP(n){const el=document.createElement('div');el.className='xp-pop';el.textContent='+'+n+' XP';document.body.appendChild(el);setTimeout(()=>el.remove(),1500)}
+function go(tab){document.querySelectorAll('nav.bottom button').forEach(x=>x.setAttribute('aria-selected',x.dataset.tab===tab));
+  document.querySelectorAll('.pane').forEach(p=>{const on=p.id==='tab-'+tab;p.hidden=!on;if(on)p.style.display='flex'});
+  if(tab==='respaldo')$('backup').value=JSON.stringify(S);window.scrollTo({top:0})}
+document.querySelectorAll('nav.bottom button').forEach(b=>b.addEventListener('click',()=>go(b.dataset.tab)));
+function flash(id,t){$(id).textContent=t;setTimeout(()=>{$(id).textContent=''},2500)}
+$('ci-fecha').value=today();$('v-fecha').value=today();
+const num=id=>{const v=$(id).value;return v===''?null:Number(v)};
+$('ciForm').addEventListener('submit',e=>{e.preventDefault();
+  award(()=>S.checkins.push({id:uid(),fecha:$('ci-fecha').value,seg:num('ci-seg')||0,vis:num('ci-vis'),lik:num('ci-lik'),sha:num('ci-sha'),per:num('ci-per'),nota:$('ci-nota').value.trim()}));
+  ['ci-seg','ci-vis','ci-lik','ci-sha','ci-per','ci-nota'].forEach(i=>$(i).value='');flash('ciToast','Corte guardado')});
+function resetV(){editing=null;$('vSubmit').textContent='Guardar video';$('vTitle').textContent='Registrar video';$('vCancel').hidden=true;['v-tit','v-vis','v-lik','v-seg'].forEach(i=>$(i).value='')}
+$('vForm').addEventListener('submit',e=>{e.preventDefault();
+  const o={fecha:$('v-fecha').value,tit:$('v-tit').value.trim(),pilar:$('v-pilar').value,tipo:$('v-tipo').value,vis:num('v-vis'),lik:num('v-lik'),seg:num('v-seg')};
+  const wasEdit=!!editing;
+  award(()=>{if(editing)Object.assign(S.videos.find(v=>v.id===editing),o);else S.videos.push({id:uid(),...o})});
+  flash('vToast',wasEdit?'Video actualizado':'Video guardado');resetV()});
+$('vCancel').addEventListener('click',resetV);
+document.addEventListener('click',e=>{const t=e.target.closest('button');if(!t)return;
+  if(t.dataset.go)go(t.dataset.go);
+  if(t.dataset.inc){const d=today();award(()=>{S.daily[d]=S.daily[d]||{};S.daily[d][t.dataset.inc]=(S.daily[d][t.dataset.inc]||0)+1})}
+  if(t.dataset.dec){const d=today();S.daily[d]=S.daily[d]||{};S.daily[d][t.dataset.dec]=Math.max(0,(S.daily[d][t.dataset.dec]||0)-1);save();renderAll()}
+  if(t.dataset.quick){award(()=>{S.checks[t.dataset.quick]=today()})}
+  for(const [k,arr] of [['delci','checkins'],['delv','videos']]){if(t.dataset[k]){if(t.dataset.armed){S[arr]=S[arr].filter(x=>x.id!==t.dataset[k]);save();renderAll()}else{t.dataset.armed='1';t.textContent='¿Seguro?'}}}
+  if(t.dataset.editv){const v=S.videos.find(x=>x.id===t.dataset.editv);editing=v.id;
+    $('v-fecha').value=v.fecha;$('v-tit').value=v.tit;$('v-pilar').value=v.pilar;$('v-tipo').value=v.tipo;$('v-vis').value=v.vis??'';$('v-lik').value=v.lik??'';$('v-seg').value=v.seg??'';
+    $('vSubmit').textContent='Actualizar video';$('vTitle').textContent='Editar video';$('vCancel').hidden=false;window.scrollTo({top:0,behavior:'smooth'})}
+});
+document.addEventListener('change',e=>{const k=e.target.dataset.chk;if(k){if(e.target.checked)award(()=>{S.checks[k]=today()});else{delete S.checks[k];save();renderAll()}}});
+$('copyBtn').addEventListener('click',()=>{const txt=JSON.stringify(S);$('backup').value=txt;
+  const fb=()=>{$('backup').select();flash('copyToast','Texto seleccionado: cópialo manualmente')};
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(()=>flash('copyToast','Respaldo copiado'),fb);else fb()});
+$('restoreBtn').addEventListener('click',()=>{try{const d=JSON.parse($('backup').value);if(!d.checkins||!d.videos)throw 0;S={checkins:d.checkins,videos:d.videos,checks:d.checks||{},daily:d.daily||{}};save();renderAll();flash('restoreToast','Datos restaurados')}catch(err){$('restoreToast').innerHTML='<span style="color:var(--bad)">Ese texto no es un respaldo válido. Copia el respaldo completo y pégalo otra vez.</span>'}});
+renderAll();
+})();
+</script>
+
+</body>
+</html>
