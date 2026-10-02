@@ -154,7 +154,7 @@ nav.bottom button[aria-selected="true"]{border-color:var(--blue);background:colo
       <div><h1 id="monthTitle">Desafío de octubre</h1><div class="days" id="monthDays"></div></div>
       <div class="lvl" id="lvlBadge"></div>
     </div>
-    <div class="big-card"><h2 id="monthGoal">Publica 16 videos</h2><div class="pbar" id="monthBar"></div></div>
+    <div class="big-card"><h2 id="monthGoal">Publica 30 videos</h2><div class="pbar" id="monthBar"></div></div>
   </div>
 </header>
 
@@ -260,7 +260,7 @@ const LEVELS=['Novato','Aprendiz','Constante','Creador','Referente','Influencer'
 const PILARES={valor:{t:'Valor / Educación',s:'Valor',meta:65},marca:{t:'Marca personal',s:'Marca',meta:20},algoritmo:{t:'Impulso algoritmo',s:'Algoritmo',meta:15}};
 const TIPOS={organico:'Orgánico',producto:'Producto',live:'Live'};
 const XPV={organico:50,producto:40,live:80};
-const META_MES=16, XP_NIVEL=300, XP_DESAFIO=25, XP_TAREA=20, XP_CORTE=40;
+const META_MES=30, XP_NIVEL=300, XP_DESAFIO=25, XP_TAREA=20, XP_CORTE=40;
 const POOL=[
   {k:'coment',t:'Responde 10 comentarios',n:10,step:1,c:'#1cb0f6'},
   {k:'ganchos',t:'Escribe 3 ganchos para próximos videos',n:3,step:1,c:'#ce82ff'},
@@ -272,7 +272,7 @@ const POOL=[
 ];
 const PHASES=[
  {id:'f1',title:'Fase 1 · Arranque',range:[0,1000],goal:'Llegar a 1,000 con contenido de valor y una cuenta clara',
-  tasks:[['bio','Cambiar bio: dueño de tlapalería en Tabasco, negocio, dinero y disciplina'],['nombre','Cambiar nombre de perfil a "Gary | Emprendiendo en Tabasco"'],['seguir','Seguir 30 a 60 cuentas de emprendedores, finanzas y dueños de negocio'],['lista10','Escribir la lista de los primeros 10 videos del pilar de Valor'],['ritmo','Publicar mínimo 4 videos por semana, entre 6 y 9 pm'],['portadas','Portadas con texto grande y legible en cada video'],['livegym','Probar un live desde la tienda o el gym'],['comentarios','Responder todos los comentarios y convertir preguntas en videos'],['corte','Hacer el corte semanal cada domingo en esta app']],
+  tasks:[['bio','Cambiar bio: dueño de tlapalería en Tabasco, negocio, dinero y disciplina'],['nombre','Cambiar nombre de perfil a "Gary | Emprendiendo en Tabasco"'],['seguir','Seguir 30 a 60 cuentas de emprendedores, finanzas y dueños de negocio'],['lista10','Escribir la lista de los primeros 10 videos del pilar de Valor'],['ritmo','Publicar 1 a 2 videos diarios, entre 6 y 9 pm'],['portadas','Portadas con texto grande y legible en cada video'],['livegym','Probar un live desde la tienda o el gym'],['comentarios','Responder todos los comentarios y convertir preguntas en videos'],['corte','Hacer el corte semanal cada domingo en esta app']],
   books:[['Show Your Work','Austin Kleon','Documentar en lugar de presumir'],['Crush It!','Gary Vaynerchuk','Constancia y volumen en una plataforma'],['$100M Leads','Alex Hormozi','Dar valor gratis que atrae']]},
  {id:'f2',title:'Fase 2 · Preparar la venta',range:[1000,2000],goal:'Llegar a 2,000 con audiencia compradora y el formato de producto dominado',
   tasks:[['muestras','Avisar a Humberto que llegaste a 1,000 y pedir las muestras'],['guiones','Escribir guion antes de cada video de producto (gancho, uso real, llamado a la acción)'],['regla21','Respetar la regla 2 a 1: dos orgánicos por cada video de producto'],['5y1','Probar el sistema de 5 videos y 1 live con un mismo producto'],['angulos','Un video diario por producto, cada día con un ángulo distinto'],['fiscal','Dejar listo RFC y cuenta bancaria con Mitzy antes de la primera comisión'],['studio','Confirmar en TikTok Studio el requisito exacto de seguidores']],
@@ -304,11 +304,14 @@ function weekStart(d){const x=new Date(d.getFullYear(),d.getMonth(),d.getDate())
 /* ---------- desafíos del día ---------- */
 function hash(s){let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))>>>0;return h}
 function dailyFor(day){
-  const h=hash(day);const a=POOL[h%POOL.length];let b=POOL[(h>>3)%POOL.length];if(b.k===a.k)b=POOL[(POOL.indexOf(a)+1)%POOL.length];
   const vids=S.videos.filter(v=>v.fecha===day).length;
   const d=S.daily[day]||{};
-  return [{k:'video',t:'Publica 1 video hoy',n:1,auto:true,val:Math.min(1,vids),c:'#ff9600'},
-          {...a,val:Math.min(a.n,d[a.k]||0)},{...b,val:Math.min(b.n,d[b.k]||0)}];
+  const fixed=[
+    {k:'comunidad',t:'15 minutos estudiando tu nicho en TikTok',sub:'Ve videos de negocios, dales like y guárdalos, y guarda 1 idea para tu tienda. Si tienes comentarios, respóndelos',n:1,c:'#1cb0f6'},
+    {k:'hashtags',t:'Usa 3 hashtags de tu nicho en tus videos de hoy',sub:'De tu lista de hashtags del nicho, ej. #emprendedor #negociopropio #dueñodenegocio',n:1,c:'#ce82ff'}
+  ];
+  return [{k:'video',t:'Publica 2 videos hoy',sub:'Con 1 ya sumas racha; el segundo completa el cofre',n:2,auto:true,val:Math.min(2,vids),c:'#ff9600'},
+          ...fixed.map(x=>({...x,val:Math.min(x.n,d[x.k]||0)}))];
 }
 function dailyDone(day){return dailyFor(day).filter(x=>x.val>=x.n).length}
 
@@ -365,9 +368,11 @@ function renderDaily(){
   const day=today();const now=new Date();const h=Math.ceil((new Date(now.getFullYear(),now.getMonth(),now.getDate()+1)-now)/36e5);
   $('dayLeft').innerHTML=`${clock} ${h}H`;
   $('daily').innerHTML=dailyFor(day).map(x=>{const done=x.val>=x.n;
-    return `<div class="ch"><div><div class="t">${x.t}</div>${pbar(x.val,x.n)}
-      ${x.auto?(done?'':`<div class="acts"><button class="b3 sm" data-go="videos">Registrar video</button></div>`)
-      :`<div class="acts"><button class="b3 sm" data-inc="${x.k}" ${done?'disabled':''}>+1</button>${x.val>0&&!done?`<button class="b3 sm ghost" data-dec="${x.k}">−1</button>`:''}</div>`}
+    const btns=x.auto?(done?'':`<div class="acts"><button class="b3 sm" data-go="videos">Registrar video</button></div>`)
+      :x.n===1?`<div class="acts">${done?`<button class="b3 sm ghost" data-dec="${x.k}">Deshacer</button>`:`<button class="b3 sm orange" data-inc="${x.k}">Ya lo hice</button>`}</div>`
+      :`<div class="acts"><button class="b3 sm" data-inc="${x.k}" ${done?'disabled':''}>+1</button>${x.val>0&&!done?`<button class="b3 sm ghost" data-dec="${x.k}">−1</button>`:''}</div>`;
+    return `<div class="ch"><div><div class="t">${x.t}</div>${x.sub?`<div class="muted" style="font-size:.85rem;font-weight:600;margin:-4px 0 8px">${x.sub}</div>`:''}${pbar(x.val,x.n)}
+      ${btns}
       </div><div class="chest ${done?'open':''}">${chest(done?x.c:'#c9c9c9',done)}</div></div>`}).join('');
 }
 function renderVersus(){
@@ -393,7 +398,7 @@ function renderHero(){
   const f=current();const p=curPhase();const g=GOALS.find(x=>f<x.n);
   let eta='Haz tu corte el domingo para calcular cuándo llegas.';const r=weeklyRate();
   if(g&&r&&r>0){const w=Math.ceil((g.n-f)/r);const dt=new Date();dt.setDate(dt.getDate()+w*7);eta=`A tu ritmo (${r.toFixed(1)} por semana) llegas en ≈ ${w} semanas, hacia ${dt.toLocaleDateString('es-MX',{month:'long',year:'numeric'})}.`}
-  else if(g&&r!==null)eta='Con el ritmo actual no te acercas. Sube a 4 videos por semana.';
+  else if(g&&r!==null)eta='Con el ritmo actual no te acercas. Cumple tus 2 videos diarios.';
   let nowSet=false;
   const goals=GOALS.map((x,i)=>{const done=f>=x.n;let st='lock';if(done)st='done';else if(!nowSet){st='now';nowSet=true}
     return `<div class="goal ${st}"><div class="ico">${st==='done'?'✓':i+1}</div><div style="min-width:0"><div>${x.name}</div><div class="muted" style="font-size:.85rem;font-weight:600">${x.why}</div></div><span class="tag ${st==='done'?'ok':st==='now'?'now':''}">${st==='done'?'Lograda':st==='now'?'En curso':'Bloqueada'}</span></div>`}).join('');
